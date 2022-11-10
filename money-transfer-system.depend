@@ -1,0 +1,33 @@
+# depslib dependency file v1.0
+1668025606 source:e:\university projects\money-transfer-system\main.c
+	<stdio.h>
+	<stdlib.h>
+	"struct.c"
+	"constants.c"
+	"utils.c"
+	"account.c"
+	"auth.c"
+
+1668012101 e:\university projects\money-transfer-system\login.c
+	<stdio.h>
+	<conio.h>
+
+1668012101 source:e:\university projects\money-transfer-system\login.c
+	<stdio.h>
+	<conio.h>
+
+1668019181 e:\university projects\money-transfer-system\struct.c
+
+1668013856 e:\university projects\money-transfer-system\constants.c
+
+1668026070 e:\university projects\money-transfer-system\auth.c
+	<stdio.h>
+	<stdbool.h>
+
+1668026073 e:\university projects\money-transfer-system\account.c
+
+1668019656 e:\university projects\money-transfer-system\display.c
+	<stdio.h>
+
+1668025629 e:\university projects\money-transfer-system\utils.c
+
