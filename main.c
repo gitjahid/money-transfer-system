@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <conio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <windows.h>
 
 struct Account
 {
@@ -18,14 +20,16 @@ struct Transaction
     long int amount;
 };
 
+void goto_coords(int x, int y);
 void signin(void);
 void signup(void);
 void signout(void);
 void show_main_menu();
-void transfer_money();
-void check_balance(char userName[]);
-void list_of_transactions(char userName[]);
 void show_account_menu(char userName[]);
+void list_of_transactions(char userName[]);
+int get_available_balance(char userName[]);
+void transfer_money(char sourceUserName[]);
+void check_balance(char userName[]);
 void display_account_info(struct Account user);
 
 const char USER_LIST_FILE_PATH[] = "./db/users.txt";
@@ -37,76 +41,13 @@ int main()
     return 0;
 }
 
-void show_main_menu()
+void goto_coords(int x, int y)
 {
-    int choice;
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
 
-    system("cls");
-    printf("**************************************\n");
-    printf("   WELCOME TO MONEY TRANSFER SYSTEM   \n");
-    printf("**************************************\n\n");
-
-    printf("1. CREATE NEW ACCOUNT\n");
-    printf("2. LOGIN TO EXISTING ACCOUNT\n");
-    printf("3. Exit\n");
-
-    printf("\nENTER YOUR CHOICE (1-3): ");
-    scanf("%d", &choice);
-
-    switch (choice)
-    {
-    case 1:
-        signup();
-        break;
-
-    case 2:
-        signin();
-        break;
-
-    case 3:
-        exit(0);
-        break;
-    }
-}
-
-void show_account_menu(char userName[])
-{
-    int choice;
-
-    system("cls");
-    printf("**************************************\n");
-    printf("   WELCOME TO MONEY TRANSFER SYSTEM   \n");
-    printf("**************************************\n\n");
-
-    printf("1. CHECK BALANCE\n");
-    printf("2. TRANSFER MONEY\n");
-    printf("3. LOG OUT\n");
-    printf("4. EXIT\n");
-
-    printf("\nENTER YOUR CHOICE (1-4): ");
-    scanf("%d", &choice);
-
-    switch (choice)
-    {
-    case 1:
-        // check balance
-        check_balance(userName);
-        break;
-
-    case 2:
-        // transfer money
-        transfer_money();
-        break;
-
-    case 3:
-        signout();
-        signin();
-        break;
-
-    case 4:
-        exit(0);
-        break;
-    }
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
 void signin()
@@ -246,42 +187,76 @@ void signout()
     }
 }
 
-void transfer_money()
+void show_main_menu()
 {
-    struct Account user;
-    struct Transaction transaction;
-    FILE *usersFile, *transactionsFile;
+    int choice;
 
-    char sourceUserName[64];
-    char destinationUserName[64];
+    system("cls");
+    printf("**************************************\n");
+    printf("   WELCOME TO MONEY TRANSFER SYSTEM   \n");
+    printf("**************************************\n\n");
 
-    usersFile = fopen(USER_LIST_FILE_PATH, "rb");
-    transactionsFile = fopen(TRANSACTION_LOG_FILE_PATH, "ab");
+    printf("1. CREATE NEW ACCOUNT\n");
+    printf("2. LOGIN TO EXISTING ACCOUNT\n");
+    printf("3. Exit\n");
 
-    printf("ENTER SOURCE USERNAME: ");
-    scanf("%s", &sourceUserName);
+    printf("\nENTER YOUR CHOICE (1-3): ");
+    scanf("%d", &choice);
 
-    printf("ENTER DESTINATION USERNAME: ");
-    scanf("%s", &destinationUserName);
-
-    while (fread(&user, sizeof(user), 1, usersFile))
+    switch (choice)
     {
-        if (strcmp(destinationUserName, user.userName) == 0)
-        {
-            strcpy(transaction.sourceUserName, user.userName);
-            strcpy(transaction.destinationUserName, sourceUserName);
-        }
+    case 1:
+        signup();
+        break;
+
+    case 2:
+        signin();
+        break;
+
+    case 3:
+        exit(0);
+        break;
     }
+}
 
-    printf("ENTER AMOUNT TO BE TRANSFERRED: ");
-    scanf("%d", &transaction.amount);
+void show_account_menu(char userName[])
+{
+    int choice;
 
-    fwrite(&transaction, sizeof(transaction), 1, transactionsFile);
+    system("cls");
+    printf("**************************************\n");
+    printf("   WELCOME TO MONEY TRANSFER SYSTEM   \n");
+    printf("**************************************\n\n");
 
-    printf("AMOUNT SUCCESSFULLY TRANSFERRED....");
+    printf("1. CHECK BALANCE\n");
+    printf("2. TRANSFER MONEY\n");
+    printf("3. LOG OUT\n");
+    printf("4. EXIT\n");
 
-    fclose(usersFile);
-    fclose(transactionsFile);
+    printf("\nENTER YOUR CHOICE (1-4): ");
+    scanf("%d", &choice);
+
+    switch (choice)
+    {
+    case 1:
+        // check balance
+        check_balance(userName);
+        break;
+
+    case 2:
+        // transfer money
+        transfer_money(userName);
+        break;
+
+    case 3:
+        signout();
+        signin();
+        break;
+
+    case 4:
+        exit(0);
+        break;
+    }
 }
 
 void list_of_transactions(char userName[])
@@ -292,24 +267,34 @@ void list_of_transactions(char userName[])
 
     transactionsFile = fopen(TRANSACTION_LOG_FILE_PATH, "rb");
 
+    int serialNoCoordsX = 0, serialNoCoordsY = 10, statusCoordsX = 10, statusCoordsY = 10, transactionCoordsX = 25, transactionCoordsY = 10, amountCoordsX = 50, amountCoordsY = 10;
+
     printf("LIST OF TRANSACTIONS\n");
     printf("**********************\n");
+    goto_coords(serialNoCoordsX, serialNoCoordsY);
     printf("SL NO.\t");
+    goto_coords(statusCoordsX, statusCoordsY);
     printf("STATUS.\t");
+    goto_coords(transactionCoordsX, transactionCoordsY);
     printf("TRANSACTION ID\t\t");
+    goto_coords(amountCoordsX, amountCoordsY);
     printf("AMOUNT\n");
 
     while (fread(&transaction, sizeof(transaction), 1, transactionsFile))
     {
         if (strcmp(userName, transaction.sourceUserName) == 0 || strcmp(userName, transaction.destinationUserName) == 0)
         {
+            goto_coords(serialNoCoordsX, ++serialNoCoordsY);
             printf("%d \t", serialNoCounter);
             serialNoCounter++;
 
+            goto_coords(statusCoordsX, ++statusCoordsY);
             printf("%s \t", strcmp(userName, transaction.sourceUserName) == 0 ? "Received" : "Sent");
 
+            goto_coords(transactionCoordsX, ++transactionCoordsY);
             printf("%s  \t", transaction.destinationUserName);
 
+            goto_coords(amountCoordsX, ++amountCoordsY);
             printf("%d\n", transaction.amount);
         }
     }
@@ -317,19 +302,13 @@ void list_of_transactions(char userName[])
     fclose(transactionsFile);
 }
 
-void check_balance(char userName[])
+int get_available_balance(char userName[])
 {
     struct Transaction transaction;
     FILE *transactionsFile;
+    int balance = 0;
 
     transactionsFile = fopen(TRANSACTION_LOG_FILE_PATH, "rb");
-
-    system("cls");
-    printf("***********************\n");
-    printf("   BALANCE DASHBOARD   \n");
-    printf("***********************\n\n");
-
-    int balance = 0;
 
     while (fread(&transaction, sizeof(transaction), 1, transactionsFile))
     {
@@ -341,6 +320,85 @@ void check_balance(char userName[])
 
     fclose(transactionsFile);
 
+    return balance;
+}
+
+void transfer_money(char sourceUserName[])
+{
+    struct Account user;
+    struct Transaction transaction;
+    FILE *usersFile, *transactionsFile;
+    bool isDestinationUserFound = false;
+
+    char destinationUserName[64];
+
+    usersFile = fopen(USER_LIST_FILE_PATH, "rb");
+    transactionsFile = fopen(TRANSACTION_LOG_FILE_PATH, "ab");
+
+    system("cls");
+    printf("********************\n");
+    printf("   TRANSFER MONEY   \n");
+    printf("********************\n\n");
+
+    printf("ENTER DESTINATION USERNAME: ");
+    scanf("%s", &destinationUserName);
+
+    while (fread(&user, sizeof(user), 1, usersFile))
+    {
+        if (strcmp(destinationUserName, user.userName) == 0)
+        {
+            isDestinationUserFound = true;
+            strcpy(transaction.sourceUserName, user.userName);
+            strcpy(transaction.destinationUserName, sourceUserName);
+            break;
+        }
+
+        isDestinationUserFound = false;
+    }
+
+    fclose(usersFile);
+    fclose(transactionsFile);
+
+    if (isDestinationUserFound == true)
+    {
+        printf("ENTER AMOUNT TO BE TRANSFERRED: ");
+        scanf("%d", &transaction.amount);
+
+        int balance = get_available_balance(sourceUserName);
+
+        if (transaction.amount <= balance)
+        {
+            fwrite(&transaction, sizeof(transaction), 1, transactionsFile);
+
+            printf("\nAMOUNT SUCCESSFULLY TRANSFERRED....");
+        }
+        else
+        {
+            printf("\nERROR:: IN-SUFFICIENT BALANCE!!!");
+        }
+    }
+    else
+    {
+        printf("\nERROR:: DESTINATION USER NOT FOUND IN OUR DATABASE!!!");
+    }
+
+    printf("\n\n--> PRESS ENTER TO GO ACCOUNT MENU <--");
+
+    char input = getch();
+    if (input == 13)
+    {
+        show_account_menu(sourceUserName);
+    }
+}
+
+void check_balance(char userName[])
+{
+    system("cls");
+    printf("***********************\n");
+    printf("   BALANCE DASHBOARD   \n");
+    printf("***********************\n\n");
+
+    int balance = get_available_balance(userName);
     printf("TOTAL BALANCE: %d\n\n", balance);
 
     list_of_transactions(userName);
