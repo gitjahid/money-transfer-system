@@ -356,8 +356,6 @@ void transfer_money(char sourceUserName[])
         isDestinationUserFound = false;
     }
 
-    fclose(usersFile);
-
     if (isDestinationUserFound == true)
     {
         printf("ENTER AMOUNT TO BE TRANSFERRED: ");
@@ -368,7 +366,6 @@ void transfer_money(char sourceUserName[])
         if (transaction.amount <= balance)
         {
             fwrite(&transaction, sizeof(transaction), 1, transactionsFile);
-            fclose(transactionsFile);
 
             printf("\nAMOUNT SUCCESSFULLY TRANSFERRED....");
         }
@@ -381,6 +378,9 @@ void transfer_money(char sourceUserName[])
     {
         printf("\nERROR:: DESTINATION USER NOT FOUND IN OUR DATABASE!!!");
     }
+
+    fclose(usersFile);
+    fclose(transactionsFile);
 
     printf("\n\n--> PRESS ENTER TO GO ACCOUNT MENU <--");
 
