@@ -357,7 +357,6 @@ void transfer_money(char sourceUserName[])
     }
 
     fclose(usersFile);
-    fclose(transactionsFile);
 
     if (isDestinationUserFound == true)
     {
@@ -369,6 +368,7 @@ void transfer_money(char sourceUserName[])
         if (transaction.amount <= balance)
         {
             fwrite(&transaction, sizeof(transaction), 1, transactionsFile);
+            fclose(transactionsFile);
 
             printf("\nAMOUNT SUCCESSFULLY TRANSFERRED....");
         }
