@@ -20,8 +20,10 @@ struct Transaction
     long int amount;
 };
 
+void loader(void);
 void goto_coords(int x, int y);
 void enter_to_continue(void callback(), char userName[]);
+bool isUserExists(char userName[]);
 void signin(void);
 void signup(void);
 void signout(void);
@@ -41,6 +43,20 @@ int main()
 {
     show_main_menu();
     return 0;
+}
+
+void loader(void)
+{
+    for (int i = 0; i < 5; i++)
+    {
+        for (int j = 0; j < 50000000; j++)
+        {
+            i++;
+            i--;
+        }
+
+        printf(".");
+    }
 }
 
 void goto_coords(int x, int y)
@@ -63,7 +79,28 @@ void enter_to_continue(void callback(), char userName[])
     }
 }
 
-void signin()
+bool isUserExists(char userName[])
+{
+    FILE *usersFile;
+    struct Account user;
+
+    bool userExists = false;
+
+    usersFile = fopen(USER_LIST_FILE_PATH, "rb");
+
+    while (fread(&user, sizeof(user), 1, usersFile))
+    {
+        if (strcmp(userName, user.userName) == 0)
+        {
+            userExists = true;
+            break;
+        }
+    }
+
+    return userExists;
+}
+
+void signin(void)
 {
     struct Account user;
     FILE *usersFile;
@@ -89,6 +126,10 @@ void signin()
     printf("PASWORD: ");
     scanf("%s", &password);
 
+    printf("\nLOGGING INTO YOUR ACCOUNT");
+    printf("\nPLEASE WAIT");
+    loader();
+
     while (fread(&user, sizeof(user), 1, usersFile))
     {
         if (strcmp(userName, user.userName) == 0)
@@ -96,8 +137,7 @@ void signin()
             isFoundUser = true;
             if (strcmp(password, user.password) != 0)
             {
-                printf("\nERROR:: INVALID LOGIN CREDENTIALS");
-
+                printf("\nERROR:: INVALID LOGIN CREDENTIALS. PLEASE TRY AGAIN!");
                 enter_to_continue(show_main_menu, NULL);
                 break;
             }
@@ -111,23 +151,21 @@ void signin()
 
     if (isFoundUser != true)
     {
-        printf("\nERROR:: USER DOESN'T EXISTS!.");
+        printf("\n\nERROR:: USER DOESN'T EXISTS!.");
         enter_to_continue(show_main_menu, NULL);
     }
 
     fclose(usersFile);
 }
 
-void signup()
+void signup(void)
 {
-    struct Account user;
     FILE *usersFile;
+    struct Account user;
 
-    bool isUserExists = false;
-    char password[20];
-    char userName[64];
+    char password[256];
 
-    usersFile = fopen(USER_LIST_FILE_PATH, "ab+");
+    usersFile = fopen(USER_LIST_FILE_PATH, "ab");
 
     system("cls");
     printf("**************************\n");
@@ -141,32 +179,26 @@ void signup()
     scanf("%s", &user.lastName);
 
     printf("USERNAME: ");
-    scanf("%s", &userName);
+    scanf("%s", &user.userName);
 
     printf("PASSWORD: ");
     scanf("%s", &user.password);
 
-    while (fread(&user, sizeof(user), 1, usersFile))
-    {
-        if (strcmp(userName, user.userName) == 0)
-        {
-            isUserExists = true;
-            break;
-        }
-    }
-
-    if (isUserExists == true)
+    if (isUserExists(user.userName))
     {
         printf("\nERROR:: USER ALREADY EXISTS");
     }
     else
     {
-        strcpy(user.userName, userName);
+        system("cls");
+        printf("WE ARE CREATING YOUR ACCOUNT");
+        printf("\nPLEASE WAIT");
+        loader();
 
         system("cls");
-        printf("*****************\n");
-        printf("   NEW ACCOUNT   \n");
-        printf("*****************\n\n");
+        printf("************************\n");
+        printf("   NEW ACCOUNT DETAILS  \n");
+        printf("************************\n\n");
         printf("NEW ACCOUNT HAS BEEN CREATED FOR -> %s %s\n", user.firstName, user.lastName);
         printf("USERNAME: %s\nPASSWORD: %s", user.userName, user.password);
 
@@ -177,27 +209,18 @@ void signup()
     enter_to_continue(show_main_menu, NULL);
 }
 
-void signout()
+void signout(void)
 {
     system("cls");
     printf("\nPLEASE WAIT, LOGGING OUT");
 
-    for (int i = 0; i < 5; i++)
-    {
-        for (int j = 0; j < 25000000; j++)
-        {
-            i++;
-            i--;
-        }
-
-        printf(".");
-    }
+    loader();
 
     printf("\nSUCCESSFULLY SIGNED OUT");
     enter_to_continue(show_main_menu, NULL);
 }
 
-void show_main_menu()
+void show_main_menu(void)
 {
     int choice;
 
