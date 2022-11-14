@@ -21,6 +21,7 @@ struct Transaction
 };
 
 void goto_coords(int x, int y);
+void enter_to_continue(void callback(), char userName[]);
 void signin(void);
 void signup(void);
 void signout(void);
@@ -32,6 +33,7 @@ void transfer_money(char sourceUserName[]);
 void check_balance(char userName[]);
 void display_account_info(struct Account user);
 
+const char ADMIN_USERNAME[] = "jahid";
 const char USER_LIST_FILE_PATH[] = "./db/users.txt";
 const char TRANSACTION_LOG_FILE_PATH[] = "./db/transaction-log.txt";
 
@@ -50,20 +52,31 @@ void goto_coords(int x, int y)
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
+void enter_to_continue(void callback(), char userName[])
+{
+    printf("\n\n--> PRESS ENTER TO GO %s MENU <--", userName != NULL ? "MAIN" : "ACCOUNT");
+
+    char input = getch();
+    if (input == 13)
+    {
+        callback(userName);
+    }
+}
+
 void signin()
 {
     struct Account user;
+    FILE *usersFile;
 
+    bool isFoundUser = false;
     char userName[64];
     char password[256];
-    bool isFoundUser = false;
-
-    FILE *usersFile;
 
     usersFile = fopen(USER_LIST_FILE_PATH, "rb");
     if (usersFile == NULL)
     {
         printf("ERROR:: UNABLE TO OPEN %s FILE.\n", USER_LIST_FILE_PATH);
+        exit(0);
     }
 
     system("cls");
@@ -84,14 +97,8 @@ void signin()
             if (strcmp(password, user.password) != 0)
             {
                 printf("\nERROR:: INVALID LOGIN CREDENTIALS");
-                printf("\n\n--> PRESS ENTER TO GO MAIN MENU <--");
 
-                char input = getch();
-                if (input == 13)
-                {
-                    show_main_menu();
-                }
-
+                enter_to_continue(show_main_menu, NULL);
                 break;
             }
 
@@ -105,13 +112,7 @@ void signin()
     if (isFoundUser != true)
     {
         printf("\nERROR:: USER DOESN'T EXISTS!.");
-        printf("\n\n--> PRESS ENTER TO GO MAIN MENU <--");
-
-        char input = getch();
-        if (input == 13)
-        {
-            show_main_menu();
-        }
+        enter_to_continue(show_main_menu, NULL);
     }
 
     fclose(usersFile);
@@ -121,9 +122,12 @@ void signup()
 {
     struct Account user;
     FILE *usersFile;
-    char password[20];
 
-    usersFile = fopen(USER_LIST_FILE_PATH, "ab");
+    bool isUserExists = false;
+    char password[20];
+    char userName[64];
+
+    usersFile = fopen(USER_LIST_FILE_PATH, "ab+");
 
     system("cls");
     printf("**************************\n");
@@ -137,28 +141,40 @@ void signup()
     scanf("%s", &user.lastName);
 
     printf("USERNAME: ");
-    scanf("%s", &user.userName);
+    scanf("%s", &userName);
 
     printf("PASSWORD: ");
     scanf("%s", &user.password);
 
-    fwrite(&user, sizeof(user), 1, usersFile);
-    fclose(usersFile);
-
-    system("cls");
-    printf("*****************\n");
-    printf("   NEW ACCOUNT   \n");
-    printf("*****************\n\n");
-    printf("NEW ACCOUNT HAS BEEN CREATED FOR -> %s %s\n", user.firstName, user.lastName);
-    printf("USERNAME: %s\nPASSWORD: %s", user.userName, user.password);
-
-    printf("\n\n--> PRESS ENTER TO GO MAIN MENU <--");
-
-    char input = getch();
-    if (input == 13)
+    while (fread(&user, sizeof(user), 1, usersFile))
     {
-        show_main_menu();
+        if (strcmp(userName, user.userName) == 0)
+        {
+            isUserExists = true;
+            break;
+        }
     }
+
+    if (isUserExists == true)
+    {
+        printf("\nERROR:: USER ALREADY EXISTS");
+    }
+    else
+    {
+        strcpy(user.userName, userName);
+
+        system("cls");
+        printf("*****************\n");
+        printf("   NEW ACCOUNT   \n");
+        printf("*****************\n\n");
+        printf("NEW ACCOUNT HAS BEEN CREATED FOR -> %s %s\n", user.firstName, user.lastName);
+        printf("USERNAME: %s\nPASSWORD: %s", user.userName, user.password);
+
+        fwrite(&user, sizeof(user), 1, usersFile);
+    }
+
+    fclose(usersFile);
+    enter_to_continue(show_main_menu, NULL);
 }
 
 void signout()
@@ -178,13 +194,7 @@ void signout()
     }
 
     printf("\nSUCCESSFULLY SIGNED OUT");
-    printf("\n\n--> PRESS ENTER TO GO MAIN MENU <--");
-
-    char input = getch();
-    if (input == 13)
-    {
-        show_main_menu();
-    }
+    enter_to_continue(show_main_menu, NULL);
 }
 
 void show_main_menu()
@@ -198,7 +208,7 @@ void show_main_menu()
 
     printf("1. CREATE NEW ACCOUNT\n");
     printf("2. LOGIN TO EXISTING ACCOUNT\n");
-    printf("3. Exit\n");
+    printf("3. EXIT\n");
 
     printf("\nENTER YOUR CHOICE (1-3): ");
     scanf("%d", &choice);
@@ -239,12 +249,10 @@ void show_account_menu(char userName[])
     switch (choice)
     {
     case 1:
-        // check balance
         check_balance(userName);
         break;
 
     case 2:
-        // transfer money
         transfer_money(userName);
         break;
 
@@ -263,11 +271,11 @@ void list_of_transactions(char userName[])
 {
     struct Transaction transaction;
     FILE *transactionsFile;
+
     int serialNoCounter = 1;
+    int serialNoCoordsX = 0, serialNoCoordsY = 10, statusCoordsX = 10, statusCoordsY = 10, transactionCoordsX = 25, transactionCoordsY = 10, amountCoordsX = 50, amountCoordsY = 10;
 
     transactionsFile = fopen(TRANSACTION_LOG_FILE_PATH, "rb");
-
-    int serialNoCoordsX = 0, serialNoCoordsY = 10, statusCoordsX = 10, statusCoordsY = 10, transactionCoordsX = 25, transactionCoordsY = 10, amountCoordsX = 50, amountCoordsY = 10;
 
     printf("LIST OF TRANSACTIONS\n");
     printf("**********************\n");
@@ -292,7 +300,7 @@ void list_of_transactions(char userName[])
             printf("%s \t", strcmp(userName, transaction.sourceUserName) == 0 ? "Received" : "Sent");
 
             goto_coords(transactionCoordsX, ++transactionCoordsY);
-            printf("%s  \t", transaction.destinationUserName);
+            printf("%s  \t", strcmp(userName, transaction.sourceUserName) == 0 ? transaction.destinationUserName : transaction.sourceUserName);
 
             goto_coords(amountCoordsX, ++amountCoordsY);
             printf("%d\n", transaction.amount);
@@ -306,6 +314,7 @@ int get_available_balance(char userName[])
 {
     struct Transaction transaction;
     FILE *transactionsFile;
+
     int balance = 0;
 
     transactionsFile = fopen(TRANSACTION_LOG_FILE_PATH, "rb");
@@ -315,6 +324,11 @@ int get_available_balance(char userName[])
         if (strcmp(userName, transaction.sourceUserName) == 0)
         {
             balance += transaction.amount;
+        }
+
+        if (strcmp(userName, transaction.destinationUserName) == 0)
+        {
+            balance -= transaction.amount;
         }
     }
 
@@ -328,8 +342,8 @@ void transfer_money(char sourceUserName[])
     struct Account user;
     struct Transaction transaction;
     FILE *usersFile, *transactionsFile;
-    bool isDestinationUserFound = false;
 
+    bool isDestinationUserFound = false;
     char destinationUserName[64];
 
     usersFile = fopen(USER_LIST_FILE_PATH, "rb");
@@ -363,7 +377,7 @@ void transfer_money(char sourceUserName[])
 
         int balance = get_available_balance(sourceUserName);
 
-        if (transaction.amount <= balance)
+        if (transaction.amount <= balance || strcmp(sourceUserName, ADMIN_USERNAME) == 0)
         {
             fwrite(&transaction, sizeof(transaction), 1, transactionsFile);
 
@@ -381,14 +395,7 @@ void transfer_money(char sourceUserName[])
 
     fclose(usersFile);
     fclose(transactionsFile);
-
-    printf("\n\n--> PRESS ENTER TO GO ACCOUNT MENU <--");
-
-    char input = getch();
-    if (input == 13)
-    {
-        show_account_menu(sourceUserName);
-    }
+    enter_to_continue(show_account_menu, sourceUserName);
 }
 
 void check_balance(char userName[])
@@ -402,14 +409,7 @@ void check_balance(char userName[])
     printf("TOTAL BALANCE: %d\n\n", balance);
 
     list_of_transactions(userName);
-
-    printf("\n--> PRESS ENTER TO GO ACCOUNT MENU <--");
-
-    char input = getch();
-    if (input == 13)
-    {
-        show_account_menu(userName);
-    }
+    enter_to_continue(show_account_menu, userName);
 }
 
 void display_account_info(struct Account user)
