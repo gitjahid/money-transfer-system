@@ -20,20 +20,20 @@ struct Transaction
     long int amount;
 };
 
+void main_menu();
 void loader(void);
-void goto_coords(int x, int y);
-void enter_to_continue(void callback(), char userName[]);
-bool isUserExists(char userName[]);
 void signin(void);
 void signup(void);
 void signout(void);
-void show_main_menu();
-void show_account_menu(char userName[]);
-void list_of_transactions(char userName[]);
-int get_available_balance(char userName[]);
-void transfer_money(char sourceUserName[]);
+void goto_coords(int x, int y);
+int get_balance(char userName[]);
+bool user_exists(char userName[]);
+void account_menu(char userName[]);
 void check_balance(char userName[]);
-void display_account_info(struct Account user);
+void user_account(struct Account user);
+void print_transactions(char userName[]);
+void transfer_money(char sourceUserName[]);
+void enter_to_continue(void callback(), char userName[]);
 
 const char ADMIN_USERNAME[] = "jahid";
 const char USER_LIST_FILE_PATH[] = "./db/users.txt";
@@ -41,7 +41,7 @@ const char TRANSACTION_LOG_FILE_PATH[] = "./db/transaction-log.txt";
 
 int main()
 {
-    show_main_menu();
+    main_menu();
     return 0;
 }
 
@@ -79,7 +79,7 @@ void enter_to_continue(void callback(), char userName[])
     }
 }
 
-bool isUserExists(char userName[])
+bool user_exists(char userName[])
 {
     FILE *usersFile;
     struct Account user;
@@ -97,13 +97,15 @@ bool isUserExists(char userName[])
         }
     }
 
+    fclose(usersFile);
+
     return userExists;
 }
 
 void signin(void)
 {
-    struct Account user;
     FILE *usersFile;
+    struct Account user;
 
     bool isFoundUser = false;
     char userName[64];
@@ -138,11 +140,11 @@ void signin(void)
             if (strcmp(password, user.password) != 0)
             {
                 printf("\nERROR:: INVALID LOGIN CREDENTIALS. PLEASE TRY AGAIN!");
-                enter_to_continue(show_main_menu, NULL);
+                enter_to_continue(main_menu, NULL);
                 break;
             }
 
-            display_account_info(user);
+            user_account(user);
             break;
         }
 
@@ -152,7 +154,7 @@ void signin(void)
     if (isFoundUser != true)
     {
         printf("\n\nERROR:: USER DOESN'T EXISTS!.");
-        enter_to_continue(show_main_menu, NULL);
+        enter_to_continue(main_menu, NULL);
     }
 
     fclose(usersFile);
@@ -184,7 +186,7 @@ void signup(void)
     printf("PASSWORD: ");
     scanf("%s", &user.password);
 
-    if (isUserExists(user.userName))
+    if (user_exists(user.userName))
     {
         printf("\nERROR:: USER ALREADY EXISTS");
     }
@@ -206,7 +208,8 @@ void signup(void)
     }
 
     fclose(usersFile);
-    enter_to_continue(show_main_menu, NULL);
+
+    enter_to_continue(main_menu, NULL);
 }
 
 void signout(void)
@@ -217,10 +220,10 @@ void signout(void)
     loader();
 
     printf("\nSUCCESSFULLY SIGNED OUT");
-    enter_to_continue(show_main_menu, NULL);
+    enter_to_continue(main_menu, NULL);
 }
 
-void show_main_menu(void)
+void main_menu(void)
 {
     int choice;
 
@@ -252,7 +255,7 @@ void show_main_menu(void)
     }
 }
 
-void show_account_menu(char userName[])
+void account_menu(char userName[])
 {
     int choice;
 
@@ -290,10 +293,72 @@ void show_account_menu(char userName[])
     }
 }
 
-void list_of_transactions(char userName[])
+void transfer_money(char sourceUserName[])
 {
+    FILE *usersFile, *transactionsFile;
+    struct Account user;
     struct Transaction transaction;
+
+    bool isDestinationUserFound = false;
+    char destinationUserName[64];
+
+    usersFile = fopen(USER_LIST_FILE_PATH, "rb");
+    transactionsFile = fopen(TRANSACTION_LOG_FILE_PATH, "ab");
+
+    system("cls");
+    printf("********************\n");
+    printf("   TRANSFER MONEY   \n");
+    printf("********************\n\n");
+
+    printf("ENTER DESTINATION USERNAME: ");
+    scanf("%s", &destinationUserName);
+
+    while (fread(&user, sizeof(user), 1, usersFile))
+    {
+        if (strcmp(destinationUserName, user.userName) == 0)
+        {
+            isDestinationUserFound = true;
+            strcpy(transaction.sourceUserName, user.userName);
+            strcpy(transaction.destinationUserName, sourceUserName);
+            break;
+        }
+
+        isDestinationUserFound = false;
+    }
+
+    if (isDestinationUserFound == true)
+    {
+        printf("ENTER AMOUNT TO BE TRANSFERRED: ");
+        scanf("%d", &transaction.amount);
+
+        int balance = get_balance(sourceUserName);
+
+        if (transaction.amount <= balance || strcmp(sourceUserName, ADMIN_USERNAME) == 0)
+        {
+            fwrite(&transaction, sizeof(transaction), 1, transactionsFile);
+
+            printf("\nAMOUNT SUCCESSFULLY TRANSFERRED....");
+        }
+        else
+        {
+            printf("\nERROR:: IN-SUFFICIENT BALANCE!!!");
+        }
+    }
+    else
+    {
+        printf("\nERROR:: DESTINATION USER NOT FOUND IN OUR DATABASE!!!");
+    }
+
+    fclose(usersFile);
+    fclose(transactionsFile);
+
+    enter_to_continue(account_menu, sourceUserName);
+}
+
+void print_transactions(char userName[])
+{
     FILE *transactionsFile;
+    struct Transaction transaction;
 
     int serialNoCounter = 1;
     int serialNoCoordsX = 0, serialNoCoordsY = 10, statusCoordsX = 10, statusCoordsY = 10, transactionCoordsX = 25, transactionCoordsY = 10, amountCoordsX = 50, amountCoordsY = 10;
@@ -333,10 +398,10 @@ void list_of_transactions(char userName[])
     fclose(transactionsFile);
 }
 
-int get_available_balance(char userName[])
+int get_balance(char userName[])
 {
-    struct Transaction transaction;
     FILE *transactionsFile;
+    struct Transaction transaction;
 
     int balance = 0;
 
@@ -360,67 +425,6 @@ int get_available_balance(char userName[])
     return balance;
 }
 
-void transfer_money(char sourceUserName[])
-{
-    struct Account user;
-    struct Transaction transaction;
-    FILE *usersFile, *transactionsFile;
-
-    bool isDestinationUserFound = false;
-    char destinationUserName[64];
-
-    usersFile = fopen(USER_LIST_FILE_PATH, "rb");
-    transactionsFile = fopen(TRANSACTION_LOG_FILE_PATH, "ab");
-
-    system("cls");
-    printf("********************\n");
-    printf("   TRANSFER MONEY   \n");
-    printf("********************\n\n");
-
-    printf("ENTER DESTINATION USERNAME: ");
-    scanf("%s", &destinationUserName);
-
-    while (fread(&user, sizeof(user), 1, usersFile))
-    {
-        if (strcmp(destinationUserName, user.userName) == 0)
-        {
-            isDestinationUserFound = true;
-            strcpy(transaction.sourceUserName, user.userName);
-            strcpy(transaction.destinationUserName, sourceUserName);
-            break;
-        }
-
-        isDestinationUserFound = false;
-    }
-
-    if (isDestinationUserFound == true)
-    {
-        printf("ENTER AMOUNT TO BE TRANSFERRED: ");
-        scanf("%d", &transaction.amount);
-
-        int balance = get_available_balance(sourceUserName);
-
-        if (transaction.amount <= balance || strcmp(sourceUserName, ADMIN_USERNAME) == 0)
-        {
-            fwrite(&transaction, sizeof(transaction), 1, transactionsFile);
-
-            printf("\nAMOUNT SUCCESSFULLY TRANSFERRED....");
-        }
-        else
-        {
-            printf("\nERROR:: IN-SUFFICIENT BALANCE!!!");
-        }
-    }
-    else
-    {
-        printf("\nERROR:: DESTINATION USER NOT FOUND IN OUR DATABASE!!!");
-    }
-
-    fclose(usersFile);
-    fclose(transactionsFile);
-    enter_to_continue(show_account_menu, sourceUserName);
-}
-
 void check_balance(char userName[])
 {
     system("cls");
@@ -428,14 +432,14 @@ void check_balance(char userName[])
     printf("   BALANCE DASHBOARD   \n");
     printf("***********************\n\n");
 
-    int balance = get_available_balance(userName);
+    int balance = get_balance(userName);
     printf("TOTAL BALANCE: %d\n\n", balance);
 
-    list_of_transactions(userName);
-    enter_to_continue(show_account_menu, userName);
+    print_transactions(userName);
+    enter_to_continue(account_menu, userName);
 }
 
-void display_account_info(struct Account user)
+void user_account(struct Account user)
 {
     system("cls");
     printf("**************************************\n");
@@ -443,5 +447,5 @@ void display_account_info(struct Account user)
     printf("**************************************\n\n");
     printf("WELCOME, %s\n\n", user.firstName);
 
-    show_account_menu(user.userName);
+    account_menu(user.userName);
 }
